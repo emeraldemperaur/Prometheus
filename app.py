@@ -1,4 +1,3 @@
-from os import os
 
 from flask import Flask
 from flask_restful import Api
@@ -10,7 +9,7 @@ from resources.item import Item, ItemList
 from resources.store import Store, StoreList
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL','sqlite:///data.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://xxjgsgqtzkrkpf:75d1805913d9ee40119a14f88f64c13392768287a59f2570a0ec9e9a50fc55df@ec2-174-129-209-212.compute-1.amazonaws.com:5432/dbr1qer8bl4vea'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'chrome'
 api = Api(app)
