@@ -1,5 +1,6 @@
 from flask_restful import Resource
 from models.store import StoreModel
+from flask import render_template, Response
 
 
 class Store(Resource):
@@ -31,4 +32,8 @@ class Store(Resource):
 
 class StoreList(Resource):
     def get(self):
-        return {'stores': [store.json() for store in StoreModel.query.all()]}
+        return {'stores': [store.json() for store in StoreModel.find_all()]}
+
+class Documentation(Resource):
+    def get(self):
+        return Response(render_template('index.html', mimetype='text/html'))

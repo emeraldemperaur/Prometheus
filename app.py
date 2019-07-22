@@ -1,23 +1,49 @@
 
 from flask import Flask
 from flask_restful import Api
-from flask_jwt import JWT
+from flask_jwt_extended import JWTManager
 
 from security import authenticate, identity
-from resources.user import UserRegister
+from blacklist import BLACKLIST
+from resources.user import UserRegister, User, UserLogin, TokenRefresh
 from resources.item import Item, ItemList
 from resources.store import Store, StoreList
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://xxjgsgqtzkrkpf:75d1805913d9ee40119a14f88f64c13392768287a59f2570a0ec9e9a50fc55df@ec2-174-129-209-212.compute-1.amazonaws.com:5432/dbr1qer8bl4vea'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['PROPAGATE_EXCEPTIONS'] = True
+app.config['JWT_BLACKLIST_ENABLED'] = False
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access','refresh']
 app.secret_key = 'chrome'
 api = Api(app)
 
+@app.before_first_request
+def create_tables():
+    db.create_all()
 
 
 
-jwt = JWT(app, authenticate, identity)
+jwt = JWTManager(app)
+
+@jwt.user_claims_loader
+def add_claims_to_jwt(identity):
+    if identity == 1: #Instead of hardcoding admin to user_id, other dynamic query or reference options can be used 
+        return {'is_admin': True}
+    return {'is_admin': False}
+
+@jwt.token_in_blacklist_loader
+def check_if_token_in_blacklist(decrypted_token):
+    return decrypted_token['identity'] in BLACKLIST
+
+
+@jwt.revoked_token_loader
+def revoked_token_callback():
+    return jsonify({
+        'description': 'This user has been revoked!',
+        'error': 'token_revoked'
+
+    }),401
 
 
 api.add_resource(Store, '/store/<string:name>')
@@ -25,6 +51,9 @@ api.add_resource(Item, '/item/<string:name>')
 api.add_resource(ItemList, '/items')
 api.add_resource(StoreList, '/stores')
 api.add_resource(UserRegister,'/register')
+api.add_resource(User, '/user/<int:user_id>')
+api.add_resource(UserLogin, '/login')
+api.add_resource(TokenRefresh, '/refresh')
 
 if __name__ == '__main__':
     from db import db
